@@ -1,0 +1,38 @@
+{
+  "name": "makan Bang - Logistik & Surat Jalan Hub",
+  "short_name": "Surat Jalan GA",
+  "description": "Sistem Pengolahan Request Order & Surat Jalan Otomatis Terintegrasi Google Spreadsheet",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#312e81",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3063/3063823.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3063/3063823.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Surat Jalan",
+      "short_name": "Surat Jalan",
+      "description": "Buka Generator Surat Jalan",
+      "url": "./index.html?tab=generator"
+    },
+    {
+      "name": "Request Order",
+      "short_name": "RO Data",
+      "description": "Lihat Database Request Order",
+      "url": "./index.html?tab=data"
+    }
+  ]
+}
