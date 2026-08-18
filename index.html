@@ -664,7 +664,7 @@ function doPost(e) {
     }
 
     if (data.action === 'saveSuratJalan') {
-      // Sheet 1: Data Surat Jalan (14 Kolom A - N)
+      // 1. Target Sheet 1: 'Data Surat Jalan'
       var sjSheet = ss.getSheetByName("Data Surat Jalan") || ss.getSheetByName("Copy of Data Surat Jalan");
       if (!sjSheet) {
         sjSheet = ss.insertSheet("Data Surat Jalan");
@@ -676,10 +676,16 @@ function doPost(e) {
         ]);
       }
 
-      // Sheet 2: Stock Card Aset (10 Kolom A - J, GID: 587119698)
+      // 2. Target Sheet 2: 'Stock Card Aset' (GID: 587119698)
       var stockCardSheet = getSheetByGid(ss, 587119698) || ss.getSheetByName("Stock Card Aset");
-      if (!stockCardSheet) {
-        stockCardSheet = ss.insertSheet("Stock Card Aset");
+      if (!stockCardSheet && sjSheet.getName() !== "Stock Card Aset") {
+        try { stockCardSheet = ss.insertSheet("Stock Card Aset"); } catch(e) {}
+      }
+      // Proteksi Ketat: Pastikan stockCardSheet TIDAK SAMA dengan sjSheet
+      if (stockCardSheet && stockCardSheet.getName() === sjSheet.getName()) {
+        stockCardSheet = null; // Mencegah penulisan ganda ke sheet Data Surat Jalan!
+      }
+      if (stockCardSheet && stockCardSheet.getLastRow() < 1) {
         stockCardSheet.appendRow([
           "Waktu Mutasi", "Nomor SJ", "Kode Aset", "Nama Aset / Barang", 
           "Outlet Tujuan", "Jenis Mutasi", "Qty Keluar (Diterima)", "Sisa Stok Utama", "Driver / Kurir", "Penerima"
@@ -688,50 +694,82 @@ function doPost(e) {
 
       var items = data.items || [];
       var nowFormatted = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+      var sjLastRow = sjSheet.getLastRow();
+      
+      // Ambil 100 baris terakhir dari Data Surat Jalan untuk Pengecekan Duplikat
+      var existingSjSignatures = {};
+      if (sjLastRow > 1) {
+        var startCheckRow = Math.max(2, sjLastRow - 100);
+        var checkValues = sjSheet.getRange(startCheckRow, 1, sjLastRow - startCheckRow + 1, 13).getValues();
+        for (var c = 0; c < checkValues.length; c++) {
+          var exSj = String(checkValues[c][1] || "").trim(); // Col B (Nomor SJ)
+          var exCode = String(checkValues[c][4] || "").trim(); // Col E (Kode RO)
+          var exItem = String(checkValues[c][10] || "").trim(); // Col K (Nama Aset)
+          if (exSj) {
+            existingSjSignatures[exSj + "_" + exCode + "_" + exItem] = true;
+          }
+        }
+      }
+
+      var savedCount = 0;
       for (var i = 0; i < items.length; i++) {
+        var itemCode = String(items[i].code || "-").trim();
+        var itemName = String(items[i].name || "-").trim();
+        var sjNo = String(data.nomorSJ || "-").trim();
+        var sig = sjNo + "_" + itemCode + "_" + itemName;
+
+        // SKIP jika data transaksi ini sudah pernah masuk (Mencegah Data Double)
+        if (existingSjSignatures[sig]) {
+          continue;
+        }
+
         var isAccepted = items[i].isDiterima === true || items[i].isDiterima === "Ya";
         var qtyTerima = Number(items[i].qtyTerima) || 0;
         var qtyKirim = Number(items[i].qtyKirim) || 0;
 
-        // 1. Simpan ke 'Data Surat Jalan' (14 Kolom A-N)
+        // 1. Simpan HANYA SATU BARIS PER ITEM ke 'Data Surat Jalan'
         sjSheet.appendRow([
           sjSheet.getLastRow(),
-          data.nomorSJ || "-",
+          sjNo,
           data.driver || "-",
           data.penerima || "-",
-          items[i].code || "-",
+          itemCode,
           "",
           data.kendaraan || "-",
           data.tanggalPengiriman || data.tanggal || "-",
           data.tanggalTerima || nowFormatted,
           data.outlet || "-",
-          items[i].name || "-",
+          itemName,
           qtyKirim,
           qtyTerima,
           items[i].keterangan || "-"
         ]);
-        
+        existingSjSignatures[sig] = true;
+        savedCount++;
+
+        // 2. Update Status di 'New Data Pusat' (Kolom W & Kolom Z)
         if (items[i].rowIdx) {
           sheetMain.getRange(items[i].rowIdx, 23).setValue("DONE"); // Update Status di Kolom W (BARANG SIAP ANTAR)
           sheetMain.getRange(items[i].rowIdx, 26).setValue(true);   // Centang Otomatis Checkbox Kolom Z (Selesai antar/terima)
-          if (isAccepted && qtyTerima > 0) {
-            // Simpan catatan mutasi ke 'Stock Card Aset' (10 Kolom A-J) TANPA memotong Kolom I pada New Data Pusat
-            stockCardSheet.appendRow([
-              nowFormatted,
-              data.nomorSJ || "-",
-              items[i].code || "-",
-              items[i].name || "-",
-              data.outlet || "-",
-              "KELUAR (SURAT JALAN)",
-              qtyTerima,
-              qtyKirim,
-              data.driver || "-",
-              data.penerima || "-"
-            ]);
-          }
+        }
+
+        // 3. Simpan ke 'Stock Card Aset' HANYA jika sheet-nya terpisah dari Data Surat Jalan
+        if (stockCardSheet && stockCardSheet.getName() !== sjSheet.getName() && isAccepted && qtyTerima > 0) {
+          stockCardSheet.appendRow([
+            nowFormatted,
+            sjNo,
+            itemCode,
+            itemName,
+            data.outlet || "-",
+            "KELUAR (SURAT JALAN)",
+            qtyTerima,
+            qtyKirim,
+            data.driver || "-",
+            data.penerima || "-"
+          ]);
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({status: "success", saved: items.length})).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({status: "success", saved: savedCount})).setMimeType(ContentService.MimeType.JSON);
     }
 
     return ContentService.createTextOutput(JSON.stringify({status: "error", message: "Unknown action"})).setMimeType(ContentService.MimeType.JSON);
