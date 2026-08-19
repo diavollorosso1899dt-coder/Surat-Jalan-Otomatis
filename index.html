@@ -1745,12 +1745,32 @@ document.getElementById('statProses').innerText = assets.filter(a => a.status ==
         }
         window.saveConfigUrl = saveConfigUrl;
 
-        function copyGasCode() {
-            const textarea = document.getElementById('gasCodeSnippet');
-            textarea.select();
-            document.execCommand('copy');
-            alertCustom("Kode Google Apps Script berhasil disalin ke clipboard!");
+        async function copyGasCode() {
+            try {
+                const textarea = document.getElementById('gasCodeSnippet');
+                if (textarea) {
+                    textarea.select();
+                    textarea.setSelectionRange(0, 99999);
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(textarea.value);
+                    } else {
+                        document.execCommand('copy');
+                    }
+                    alertCustom("📋 Kode Google Apps Script berhasil disalin ke clipboard!");
+                }
+            } catch (err) {
+                try {
+                    const textarea = document.getElementById('gasCodeSnippet');
+                    textarea.select();
+                    document.execCommand('copy');
+                    alertCustom("📋 Kode Google Apps Script berhasil disalin!");
+                } catch(e) {
+                    alertCustom("Silakan salin teks kode di dalam kotak secara manual.");
+                }
+            }
+            return false;
         }
+        window.copyGasCode = copyGasCode;
 
         function openAddModal() {
             document.getElementById('addModal').classList.remove('hidden');

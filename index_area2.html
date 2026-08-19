@@ -415,7 +415,7 @@
                         <i class="fa-solid fa-gears text-indigo-600 text-lg"></i>
                         <h3 class="text-base font-extrabold text-slate-900">Konfigurasi Google Apps Script API</h3>
                     </div>
-                    <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <button type="button" onclick="document.getElementById('configModal').style.setProperty('display', 'none', 'important'); closeConfigModal(); return false;" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer p-1">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
@@ -441,7 +441,7 @@
                     <div>
                         <div class="flex justify-between items-center mb-1">
                             <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Kode Apps Script Backend (`Code.gs`)</label>
-                            <button onclick="copyGasCode()" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold"><i class="fa-solid fa-copy mr-1"></i> Salin Kode</button>
+                            <button type="button" onclick="copyGasCode(); return false;" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold cursor-pointer p-1"><i class="fa-solid fa-copy mr-1"></i> Salin Kode</button>
                         </div>
                         <textarea id="gasCodeSnippet" readonly class="w-full h-52 p-3 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-xl focus:outline-none leading-relaxed">
 // --- FUNGSI PEMINDAHAN DATA MENTAH KE NEW DATA PUSAT ---
@@ -1722,12 +1722,32 @@ document.getElementById('statProses').innerText = assets.filter(a => a.status ==
         }
         window.saveConfigUrl = saveConfigUrl;
 
-        function copyGasCode() {
-            const textarea = document.getElementById('gasCodeSnippet');
-            textarea.select();
-            document.execCommand('copy');
-            alertCustom("Kode Google Apps Script berhasil disalin ke clipboard!");
+        async function copyGasCode() {
+            try {
+                const textarea = document.getElementById('gasCodeSnippet');
+                if (textarea) {
+                    textarea.select();
+                    textarea.setSelectionRange(0, 99999);
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(textarea.value);
+                    } else {
+                        document.execCommand('copy');
+                    }
+                    alertCustom("📋 Kode Google Apps Script berhasil disalin ke clipboard!");
+                }
+            } catch (err) {
+                try {
+                    const textarea = document.getElementById('gasCodeSnippet');
+                    textarea.select();
+                    document.execCommand('copy');
+                    alertCustom("📋 Kode Google Apps Script berhasil disalin!");
+                } catch(e) {
+                    alertCustom("Silakan salin teks kode di dalam kotak secara manual.");
+                }
+            }
+            return false;
         }
+        window.copyGasCode = copyGasCode;
 
         function openAddModal() {
             document.getElementById('addModal').classList.remove('hidden');
