@@ -1391,26 +1391,23 @@ function doPost(e) {
             tbody.innerHTML = html;
         }
 
-        async function fetchSheetData() {
+        async function fetchSheetData(silent = false) {
             if (!gasWebAppUrl) {
-                alertCustom("URL Web App belum dikonfigurasi. Menggunakan data lokal.");
+                updateConnectionBanner(false);
                 return;
             }
 
-            renderSkeletonTable();
-
-            const syncBtn = document.getElementById('syncBtn');
-            syncBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Menyinkronkan...`;
+            if (!silent) {
+                renderSkeletonTable();
+                const syncBtn = document.getElementById('syncBtn');
+                if (syncBtn) syncBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Menyinkronkan...`;
+            }
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 6000);
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
 
             try {
-                let fetchUrl = gasWebAppUrl;
-                if (!fetchUrl.includes('id=')) {
-                    fetchUrl += (fetchUrl.includes('?') ? '&' : '?') + 'id=' + JABO_SPREADSHEET_ID;
-                }
-                fetchUrl += (fetchUrl.includes('?') ? '&' : '?') + '_nocache=' + new Date().getTime();
+                let fetchUrl = gasWebAppUrl + (gasWebAppUrl.includes('?') ? '&' : '?') + '_nocache=' + new Date().getTime();
                 const response = await fetch(fetchUrl, { signal: controller.signal });
                 clearTimeout(timeoutId);
 
@@ -1420,33 +1417,37 @@ function doPost(e) {
                     data = JSON.parse(responseText);
                 } catch (parseErr) {
                     console.error("Apps Script Response Error (Non-JSON):", responseText.substring(0, 200));
-                    alertCustom("⚠️ Memerlukan Web App URL dari Apps Script Spreadsheet Jabo.");
+                    if (!silent) alertCustom("⚠️ Memerlukan Web App URL yang valid dari Apps Script Jabo.");
                     updateConnectionBanner(false);
                     return;
                 }
 
                 if (Array.isArray(data)) {
-                    // Filter baris kosong murni (mempertahankan semua data yang punya Kode RO atau Nama Barang)
                     assets = data.map(parseAssetItem).filter(a => a && ((a.name && String(a.name).trim() !== '' && String(a.name).trim() !== '-') || (a.code && String(a.code).trim() !== '' && String(a.code).trim() !== '-')));
                     saveLocalState();
                     renderTable();
                     updateStats();
                     populateOutletDropdowns();
                     updateConnectionBanner(true);
-                    playAudioFx('success');
-                    alertCustom(`Berhasil menyinkronkan ${assets.length} data aktif dari Google Sheets!`);
+                    if (!silent) {
+                        playAudioFx('success');
+                        alertCustom(`Berhasil menyinkronkan ${assets.length} data aktif dari Google Sheets!`);
+                    }
                 }
             } catch (err) {
                 clearTimeout(timeoutId);
                 console.error("Gagal sinkronisasi data:", err);
-                if (err.name === 'AbortError') {
-                    alertCustom("⏱️ Koneksi Apps Script lambat (>6d). Menggunakan data cache lokal.");
-                } else {
-                    alertCustom("Gagal terhubung ke Google Sheets. Memakai data cadangan lokal.");
+                if (!silent) {
+                    if (err.name === 'AbortError') {
+                        alertCustom("⏱️ Koneksi Apps Script lambat. Menggunakan data cache lokal.");
+                    } else {
+                        alertCustom("Gagal terhubung ke Google Sheets. Memakai data cadangan lokal.");
+                    }
                 }
                 updateConnectionBanner(false);
             } finally {
-                syncBtn.innerHTML = `<i class="fa-solid fa-rotate"></i> Sinkronkan Data`;
+                const syncBtn = document.getElementById('syncBtn');
+                if (syncBtn) syncBtn.innerHTML = `<i class="fa-solid fa-rotate"></i> Sinkronkan Data`;
             }
         }
 
@@ -2259,12 +2260,24 @@ document.getElementById('statProses').innerText = assets.filter(a => a.status ==
             setTimeout(() => div.remove(), 3500);
         }
 
-        // OTOMATIS SINKRONKAN DATA PADA SAAT HALAMAN DIBUKA (AUTO-SYNC ON LOAD)
+        // OTOMATIS SINKRONKAN DATA PADA SAAT HALAMAN DIBUKA & INTERVAL REAL-TIME
         document.addEventListener('DOMContentLoaded', function() {
             renderTable();
             updateStats();
             populateOutletDropdowns();
             fetchSheetData();
+
+            // Periodic Silent Auto-Sync via API every 25 seconds
+            setInterval(function() {
+                if (document.visibilityState === 'visible') {
+                    fetchSheetData(true);
+                }
+            }, 25000);
+
+            // Auto-Sync on Tab Focus
+            window.addEventListener('focus', function() {
+                fetchSheetData(true);
+            });
         });
     </script>
 </body>

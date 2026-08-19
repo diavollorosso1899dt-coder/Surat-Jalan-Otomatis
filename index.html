@@ -2280,12 +2280,24 @@ document.getElementById('statProses').innerText = assets.filter(a => a.status ==
             setTimeout(() => div.remove(), 3500);
         }
 
-        // OTOMATIS SINKRONKAN DATA PADA SAAT HALAMAN DIBUKA (AUTO-SYNC ON LOAD)
+        // OTOMATIS SINKRONKAN DATA PADA SAAT HALAMAN DIBUKA & INTERVAL REAL-TIME
         document.addEventListener('DOMContentLoaded', function() {
             renderTable();
             updateStats();
             populateOutletDropdowns();
             fetchSheetData();
+
+            // Periodic Silent Auto-Sync via API every 25 seconds
+            setInterval(function() {
+                if (document.visibilityState === 'visible') {
+                    fetchSheetData(true);
+                }
+            }, 25000);
+
+            // Auto-Sync on Tab Focus
+            window.addEventListener('focus', function() {
+                fetchSheetData(true);
+            });
         });
     </script>
 </body>
