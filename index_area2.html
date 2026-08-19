@@ -1325,13 +1325,18 @@ function doPost(e) {
             const syncBtn = document.getElementById('syncBtn');
             syncBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Menyinkronkan...`;
 
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000);
+
             try {
                 let fetchUrl = gasWebAppUrl;
                 if (!fetchUrl.includes('id=')) {
                     fetchUrl += (fetchUrl.includes('?') ? '&' : '?') + 'id=' + JABO_SPREADSHEET_ID;
                 }
                 fetchUrl += (fetchUrl.includes('?') ? '&' : '?') + '_nocache=' + new Date().getTime();
-                const response = await fetch(fetchUrl);
+                const response = await fetch(fetchUrl, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
                 const data = await response.json();
                 if (Array.isArray(data)) {
                     // Filter baris kosong murni (mempertahankan semua data yang punya Kode RO atau Nama Barang)
@@ -1345,8 +1350,13 @@ function doPost(e) {
                     alertCustom(`Berhasil menyinkronkan ${assets.length} data aktif dari Google Sheets!`);
                 }
             } catch (err) {
+                clearTimeout(timeoutId);
                 console.error("Gagal sinkronisasi data:", err);
-                alertCustom("Gagal terhubung ke Google Sheets. Memakai data cadangan lokal.");
+                if (err.name === 'AbortError') {
+                    alertCustom("⏱️ Koneksi Apps Script lambat (>6d). Menggunakan data cache lokal.");
+                } else {
+                    alertCustom("Gagal terhubung ke Google Sheets. Memakai data cadangan lokal.");
+                }
                 updateConnectionBanner(false);
             } finally {
                 syncBtn.innerHTML = `<i class="fa-solid fa-rotate"></i> Sinkronkan Data`;
@@ -1679,18 +1689,26 @@ document.getElementById('statProses').innerText = assets.filter(a => a.status ==
         });
 
         function saveConfigUrl() {
-            const url = document.getElementById('gasUrlInput').value.trim();
-            if (url) {
-                gasWebAppUrl = url;
-                localStorage.setItem('gas_web_app_url_jabodetabek', url);
-                alertCustom("✅ URL Web App Jabodetabek Berhasil Disimpan!");
-                fetchSheetData();
-            } else {
-                localStorage.removeItem('gas_web_app_url_jabodetabek');
-                gasWebAppUrl = '';
-                alertCustom("Konfigurasi diubah ke data cadangan lokal.");
+            try {
+                const urlInput = document.getElementById('gasUrlInput');
+                const url = urlInput ? urlInput.value.trim() : '';
+                if (url) {
+                    gasWebAppUrl = url;
+                    localStorage.setItem('gas_web_app_url_jabodetabek', url);
+                    closeConfigModal();
+                    alertCustom("✅ URL Web App Jabodetabek Berhasil Disimpan!");
+                    setTimeout(() => { fetchSheetData(); }, 50);
+                } else {
+                    localStorage.removeItem('gas_web_app_url_jabodetabek');
+                    gasWebAppUrl = DEFAULT_GAS_URL_JABO;
+                    closeConfigModal();
+                    alertCustom("Konfigurasi diubah ke URL bawaan.");
+                    setTimeout(() => { fetchSheetData(); }, 50);
+                }
+            } catch(err) {
+                console.error("Gagal simpan URL:", err);
+                closeConfigModal();
             }
-            closeConfigModal();
         }
 
         function copyGasCode() {

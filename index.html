@@ -1708,16 +1708,26 @@ document.getElementById('statProses').innerText = assets.filter(a => a.status ==
         });
 
         function saveConfigUrl() {
-            const url = document.getElementById('gasUrlInput').value.trim();
-            if (url) {
-                gasWebAppUrl = url;
-                localStorage.setItem('gas_url_area1', url);
-            } else {
-                gasWebAppUrl = DEFAULT_GAS_URL;
-                localStorage.setItem('gas_url_area1', DEFAULT_GAS_URL);
+            try {
+                const urlInput = document.getElementById('gasUrlInput');
+                const url = urlInput ? urlInput.value.trim() : '';
+                if (url) {
+                    gasWebAppUrl = url;
+                    localStorage.setItem('gas_url_area1', url);
+                    closeConfigModal();
+                    alertCustom("✅ URL Web App Area 1 Berhasil Disimpan!");
+                    setTimeout(() => { fetchSheetData(); }, 50);
+                } else {
+                    localStorage.removeItem('gas_url_area1');
+                    gasWebAppUrl = DEFAULT_GAS_URL;
+                    closeConfigModal();
+                    alertCustom("Konfigurasi diubah ke URL bawaan.");
+                    setTimeout(() => { fetchSheetData(); }, 50);
+                }
+            } catch(err) {
+                console.error("Gagal simpan URL:", err);
+                closeConfigModal();
             }
-            closeConfigModal();
-            fetchSheetData();
         }
 
         function copyGasCode() {
