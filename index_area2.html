@@ -882,7 +882,8 @@ function doPost(e) {
         ];
 
         // Centralized Apps Script URL (Area 2 - Jabodetabek)
-        const DEFAULT_GAS_URL_JABO = 'https://script.google.com/macros/s/AKfycbwEp2no-rHnAluDMpt3Mswt8XocdiTQCV3b4_G8GIA-foWPlyOZ4HuIHRohc_pl-kI/exec';
+        const JABO_SPREADSHEET_ID = "1OnBphu5cyef0xuqwLW-HxMwJGYClaXpqFnyd3gDFJe8";
+        const DEFAULT_GAS_URL_JABO = 'https://script.google.com/macros/s/AKfycbwEp2no-rHnAluDMpt3Mswt8XocdiTQCV3b4_G8GIA-foWPlyOZ4HuIHRohc_pl-kI/exec?id=1OnBphu5cyef0xuqwLW-HxMwJGYClaXpqFnyd3gDFJe8';
         let gasWebAppUrl = localStorage.getItem('gas_web_app_url_jabodetabek') || DEFAULT_GAS_URL_JABO;
         if (!gasWebAppUrl || gasWebAppUrl.trim() === '') {
             gasWebAppUrl = DEFAULT_GAS_URL_JABO;
@@ -1226,7 +1227,11 @@ function doPost(e) {
             syncBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Menyinkronkan...`;
 
             try {
-                const fetchUrl = gasWebAppUrl + (gasWebAppUrl.includes('?') ? '&' : '?') + '_nocache=' + new Date().getTime();
+                let fetchUrl = gasWebAppUrl;
+                if (!fetchUrl.includes('id=')) {
+                    fetchUrl += (fetchUrl.includes('?') ? '&' : '?') + 'id=' + JABO_SPREADSHEET_ID;
+                }
+                fetchUrl += (fetchUrl.includes('?') ? '&' : '?') + '_nocache=' + new Date().getTime();
                 const response = await fetch(fetchUrl);
                 const data = await response.json();
                 if (Array.isArray(data)) {
