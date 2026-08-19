@@ -957,86 +957,69 @@ function doPost(e) {
         }
 
         function parseAssetItem(item) {
-            if (!item || typeof item !== 'object') return item;
+            if (!item || typeof item !== 'object') return null;
             
             let code = String(item.code || '').trim();
             let name = String(item.name || '').trim();
             let outlet = String(item.outlet || '').trim();
-            let reqDate = String(item.reqDate || item.tglPermintaan || '').trim();
+            let reqDate = String(item.reqDate || item.tglPermintaan || item.tglInput || item.tanggalInput || '').trim();
             let qty = item.qty;
             let rawStatus = String(item.status || item.barangSiapAntar || '').trim();
 
-            const knownOutletKeywords = [
-                'Bebek Boedjang', 'Bakso Tyga Sapi', 'Sop Mak Garang', 'Mie Ayam Muntjul',
-                'Ayam Goreng Makmur', 'Ikan Bakar Muara', 'Kokotuku', 'Perlengkapan', 'Peralatan',
-                'Singkawang', 'Serdam', 'Merdeka', 'Perdana', 'Patimura', 'Johar', 'Ayani',
-                'Siantan', 'M Sohor', 'Danse', 'SSA', 'Utama'
-            ];
+            let finalName = name;
+            let finalOutlet = outlet;
+            let finalCode = code;
 
-            let detectedOutlet = '';
-            [outlet, name, reqDate].forEach(val => {
-                if (!detectedOutlet && val) {
-                    for (let kw of knownOutletKeywords) {
-                        if (val.toLowerCase().includes(kw.toLowerCase())) {
-                            detectedOutlet = val;
-                            break;
-                        }
+            // Fallback heuristic only if outlet is missing
+            if (!finalOutlet || finalOutlet === '-' || finalOutlet === 'undefined') {
+                const knownOutletKeywords = [
+                    'Bebek Boedjang', 'Warung Nini', 'Business Development', 'Bakso Tyga Sapi',
+                    'Sop Mak Garang', 'Mie Ayam Muntjul', 'Ayam Goreng Makmur', 'Ikan Bakar Muara',
+                    'Karawang', 'Meruya', 'Kokotuku', 'Perlengkapan', 'Peralatan'
+                ];
+                for (let kw of knownOutletKeywords) {
+                    if (name.toLowerCase().includes(kw.toLowerCase())) {
+                        finalOutlet = name;
+                        finalName = '';
+                        break;
                     }
                 }
-            });
+            }
 
-            let detectedName = '';
-            [name, qty, outlet].forEach(val => {
-                if (!detectedName && val && typeof val === 'string') {
-                    let str = val.trim();
-                    let isNum = !isNaN(Number(str));
-                    let isDate = str.match(/^\d{2}[-\/]\d{2}[-\/]\d{4}/) || str.match(/^\d{4}[-\/]\d{2}[-\/]\d{2}/) || str.includes('GMT') || str.includes('T17:');
-                    let isOutletKw = knownOutletKeywords.some(kw => str.toLowerCase().includes(kw.toLowerCase()));
-                    
-                    if (!isNum && !isDate && !isOutletKw && str.length > 1) {
-                        detectedName = str;
-                    }
-                }
-            });
+            if (!finalName || finalName === 'undefined') {
+                finalName = name || 'Item Aset';
+            }
 
-            let detectedQty = 1;
-            [qty, name, outlet].forEach(val => {
-                if (val !== undefined && val !== null) {
-                    let num = Number(val);
-                    if (!isNaN(num) && num > 0 && num < 10000) {
-                        detectedQty = num;
-                    }
-                }
-            });
+            let finalQty = typeof qty === 'number' ? qty : parseInt(qty) || 1;
+            let displayReqDate = formatDisplayDate(reqDate);
 
-            let detectedReqDate = '-';
-            [reqDate, outlet, item.tglInput, item.tanggalInput].forEach(val => {
-                if (detectedReqDate === '-' && val) {
-                    let str = String(val).trim();
-                    if (str.match(/^\d{2}[-\/]\d{2}[-\/]\d{4}/) || str.match(/^\d{4}[-\/]\d{2}[-\/]\d{2}/)) {
-                        detectedReqDate = str.split(' ')[0];
-                    }
-                }
-            });
-            if (detectedReqDate === '-') detectedReqDate = reqDate || item.tglInput || '15-06-2026';
+            let isSelesai = item.isSelesai === true || String(item.isSelesai).toLowerCase() === 'true';
+            let status = 'Proses Gudang';
+            let rawLower = rawStatus.toLowerCase();
 
-            let normStatus = 'Proses Gudang';
-            if (item.isSelesai === true || rawStatus.toLowerCase().includes('done') || rawStatus.toLowerCase().includes('selesai')) {
-                normStatus = 'DONE';
-            } else if (rawStatus.toLowerCase().includes('ready') || rawStatus.toLowerCase().includes('antar') || rawStatus.toLowerCase().includes('siap') || rawStatus === 'ya' || rawStatus === 'true') {
-                normStatus = 'Ready Antar';
-            } else {
-                normStatus = item.status || 'Proses Gudang';
+            if (isSelesai || rawLower.includes('selesai') || rawLower === 'done') {
+                status = 'DONE';
+            } else if (
+                rawLower.includes('ready') || 
+                rawLower.includes('antar') || 
+                rawLower.includes('siap') || 
+                rawLower === 'true' || 
+                rawLower === 'ya'
+            ) {
+                status = 'Ready Antar';
+            } else if (item.status) {
+                status = item.status;
             }
 
             return {
+                ...item,
                 rowIdx: item.rowIdx || null,
-                code: code || generateUniqueCode(5),
-                reqDate: detectedReqDate,
-                name: detectedName || name || 'Aset Outlet',
-                outlet: detectedOutlet || outlet || 'Outlet Utama',
-                qty: detectedQty,
-                status: normStatus,
+                code: finalCode || generateUniqueCode(5),
+                reqDate: displayReqDate,
+                name: finalName,
+                outlet: finalOutlet || 'Outlet Utama',
+                qty: finalQty,
+                status: status,
                 priority: item.priority || 'Normal'
             };
         }
