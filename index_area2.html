@@ -1054,8 +1054,8 @@ function doPost(e) {
         const JABO_SPREADSHEET_ID = "1OnBphu5cyef0xuqwLW-HxMwJGYClaXpqFnyd3gDFJe8";
         const DEFAULT_GAS_URL_JABO = 'https://script.google.com/macros/s/AKfycbwKkdfzcKrX8rLr2Tuzw7kZWjBYTw8dUeTFOLnTUI0Z7zHYpnfGaJkB3JQTCiADGnbQVA/exec';
         
-        // Automatic Mobile Cache Invalidation Version
-        const CURRENT_CACHE_VERSION = 'v5.0_jabo_official_webapp';
+        // Automatic Mobile & Desktop Hard Reset to Official Jabo API
+        const CURRENT_CACHE_VERSION = 'v7.0_hard_reset_jabo_official_api';
         if (localStorage.getItem('makanbang_cache_ver_jabo') !== CURRENT_CACHE_VERSION) {
             localStorage.removeItem('makanbang_assets_cache_jabo');
             localStorage.setItem('gas_web_app_url_jabodetabek', DEFAULT_GAS_URL_JABO);
@@ -1063,8 +1063,9 @@ function doPost(e) {
         }
 
         let gasWebAppUrl = localStorage.getItem('gas_web_app_url_jabodetabek') || DEFAULT_GAS_URL_JABO;
-        if (!gasWebAppUrl || gasWebAppUrl.trim() === '') {
+        if (!gasWebAppUrl || gasWebAppUrl.trim() === '' || gasWebAppUrl.includes('AKfycbwEp2no-rHnAluDMpt3Mswt8XocdiTQCV3b4_G8GIA-foWPlyOZ4HuIHRohc_pl-kI')) {
             gasWebAppUrl = DEFAULT_GAS_URL_JABO;
+            localStorage.setItem('gas_web_app_url_jabodetabek', DEFAULT_GAS_URL_JABO);
         }
 
         // Load cached assets safely
