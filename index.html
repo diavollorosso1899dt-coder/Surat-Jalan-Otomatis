@@ -1580,10 +1580,7 @@ document.getElementById('statProses').innerText = assets.filter(a => a.status ==
                 const modal = document.getElementById('configModal');
                 if (modal) {
                     modal.classList.remove('hidden');
-                    modal.style.setProperty('display', 'flex', 'important');
-                    modal.style.setProperty('visibility', 'visible', 'important');
-                    modal.style.setProperty('opacity', '1', 'important');
-                    modal.style.setProperty('z-index', '999999', 'important');
+                    modal.setAttribute('style', 'display: flex !important; visibility: visible !important; opacity: 1 !important; z-index: 999999 !important;');
                 }
                 const input = document.getElementById('gasUrlInput');
                 if (input) input.value = gasWebAppUrl || '';
@@ -1597,10 +1594,19 @@ document.getElementById('statProses').innerText = assets.filter(a => a.status ==
                 const modal = document.getElementById('configModal');
                 if (modal) {
                     modal.classList.add('hidden');
-                    modal.style.setProperty('display', 'none', 'important');
+                    modal.setAttribute('style', 'display: none !important; visibility: hidden !important;');
                 }
             } catch(err) {}
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.btn-config-spreadsheet').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    if (e) e.preventDefault();
+                    openConfigModal();
+                });
+            });
+        });
 
         function saveConfigUrl() {
             const url = document.getElementById('gasUrlInput').value.trim();
