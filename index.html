@@ -872,6 +872,81 @@ function doPost(e) {
 
     <!-- Application Script Logic -->
     <script>
+        function switchTab(tab) {
+            try {
+                const tabData = document.getElementById('tab-data');
+                const tabGen = document.getElementById('tab-generator');
+                const btnData = document.getElementById('btn-tab-data');
+                const btnGen = document.getElementById('btn-tab-generator');
+
+                if (tab === 'data') {
+                    if (tabData) tabData.classList.remove('hidden');
+                    if (tabGen) tabGen.classList.add('hidden');
+                    if (btnData) btnData.className = "px-4 py-2 text-xs font-bold rounded-xl bg-white text-indigo-950 transition shadow-md flex items-center gap-2 cursor-pointer";
+                    if (btnGen) btnGen.className = "px-4 py-2 text-xs font-bold rounded-xl text-indigo-100 hover:bg-indigo-800/60 transition flex items-center gap-2 cursor-pointer";
+                } else {
+                    if (tabData) tabData.classList.add('hidden');
+                    if (tabGen) tabGen.classList.remove('hidden');
+                    if (btnGen) btnGen.className = "px-4 py-2 text-xs font-bold rounded-xl bg-white text-indigo-950 transition shadow-md flex items-center gap-2 cursor-pointer";
+                    if (btnData) btnData.className = "px-4 py-2 text-xs font-bold rounded-xl text-indigo-100 hover:bg-indigo-800/60 transition flex items-center gap-2 cursor-pointer";
+                    try { populateOutletDropdowns(); } catch(e){}
+                }
+            } catch(e) { console.error("Error switchTab:", e); }
+            return false;
+        }
+        window.switchTab = switchTab;
+
+        function openSjHistoryModal() {
+            try {
+                renderSjHistory();
+                const modal = document.getElementById('sjHistoryModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.setAttribute('style', 'display: flex !important; visibility: visible !important; opacity: 1 !important; z-index: 999999 !important;');
+                }
+            } catch(e) { console.error("Error openSjHistoryModal:", e); }
+            return false;
+        }
+        window.openSjHistoryModal = openSjHistoryModal;
+
+        function closeSjHistoryModal() {
+            try {
+                const modal = document.getElementById('sjHistoryModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.setAttribute('style', 'display: none !important; visibility: hidden !important;');
+                }
+            } catch(e) {}
+            return false;
+        }
+        window.closeSjHistoryModal = closeSjHistoryModal;
+
+        function openConfigModal() {
+            try {
+                const modal = document.getElementById('configModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.setAttribute('style', 'display: flex !important; visibility: visible !important; opacity: 1 !important; z-index: 999999 !important;');
+                }
+                const input = document.getElementById('gasUrlInput');
+                if (input) input.value = gasWebAppUrl || '';
+            } catch(e) { console.error("Error openConfigModal:", e); }
+            return false;
+        }
+        window.openConfigModal = openConfigModal;
+
+        function closeConfigModal() {
+            try {
+                const modal = document.getElementById('configModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.setAttribute('style', 'display: none !important; visibility: hidden !important;');
+                }
+            } catch(e) {}
+            return false;
+        }
+        window.closeConfigModal = closeConfigModal;
+
         function generateUniqueCode(length = 4) {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             let result = '';
