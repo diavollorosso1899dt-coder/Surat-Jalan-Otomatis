@@ -1337,7 +1337,17 @@ function doPost(e) {
                 const response = await fetch(fetchUrl, { signal: controller.signal });
                 clearTimeout(timeoutId);
 
-                const data = await response.json();
+                const responseText = await response.text();
+                let data = [];
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseErr) {
+                    console.error("Apps Script Response Error (Non-JSON):", responseText.substring(0, 200));
+                    alertCustom("⚠️ Memerlukan Web App URL dari Apps Script Spreadsheet Jabo.");
+                    updateConnectionBanner(false);
+                    return;
+                }
+
                 if (Array.isArray(data)) {
                     // Filter baris kosong murni (mempertahankan semua data yang punya Kode RO atau Nama Barang)
                     assets = data.map(parseAssetItem).filter(a => a && ((a.name && String(a.name).trim() !== '' && String(a.name).trim() !== '-') || (a.code && String(a.code).trim() !== '' && String(a.code).trim() !== '-')));

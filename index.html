@@ -1359,12 +1359,26 @@ function doPost(e) {
             syncBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Menyinkronkan...`;
 
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
                 const fetchUrl = gasWebAppUrl + (gasWebAppUrl.includes('?') ? '&' : '?') + '_nocache=' + new Date().getTime();
-                const response = await fetch(fetchUrl);
-                const data = await response.json();
+                const response = await fetch(fetchUrl, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                const responseText = await response.text();
+                let data = [];
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseErr) {
+                    console.error("Apps Script Response Error (Non-JSON):", responseText.substring(0, 200));
+                    alertCustom("⚠️ Memerlukan Web App URL dari Apps Script Spreadsheet Kalbar.");
+                    updateConnectionBanner(false);
+                    return;
+                }
+
                 if (Array.isArray(data)) {
-                    // Filter out trailing blank spreadsheet rows (where name and code are empty)
-                    assets = data.map(parseAssetItem).filter(a => a && a.name && String(a.name).trim() !== '' && String(a.name).trim() !== '-');
+                    // Filter baris kosong murni (mempertahankan semua data yang punya Kode RO atau Nama Barang)
+                    assets = data.map(parseAssetItem).filter(a => a && ((a.name && String(a.name).trim() !== '' && String(a.name).trim() !== '-') || (a.code && String(a.code).trim() !== '' && String(a.code).trim() !== '-')));
                     saveLocalState();
                     renderTable();
                     updateStats();
