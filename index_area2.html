@@ -781,8 +781,8 @@ function doPost(e) {
                 </div>
             </div>
             <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
-                <button type="button" onclick="closeConfigModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl">Batal</button>
-                <button type="button" onclick="saveConfigUrl()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm">Simpan & Hubungkan</button>
+                <button type="button" onclick="closeConfigModal(); return false;" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer">Batal</button>
+                <button type="button" onclick="saveConfigUrl(); closeConfigModal(); return false;" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm cursor-pointer z-50">Simpan & Hubungkan</button>
             </div>
         </div>
     </div>
@@ -1694,22 +1694,23 @@ document.getElementById('statProses').innerText = assets.filter(a => a.status ==
                 const url = urlInput ? urlInput.value.trim() : '';
                 if (url) {
                     gasWebAppUrl = url;
-                    localStorage.setItem('gas_web_app_url_jabodetabek', url);
-                    closeConfigModal();
-                    alertCustom("✅ URL Web App Jabodetabek Berhasil Disimpan!");
-                    setTimeout(() => { fetchSheetData(); }, 50);
+                    try { localStorage.setItem('gas_web_app_url_jabodetabek', url); } catch(e){}
                 } else {
-                    localStorage.removeItem('gas_web_app_url_jabodetabek');
                     gasWebAppUrl = DEFAULT_GAS_URL_JABO;
-                    closeConfigModal();
-                    alertCustom("Konfigurasi diubah ke URL bawaan.");
-                    setTimeout(() => { fetchSheetData(); }, 50);
+                    try { localStorage.removeItem('gas_web_app_url_jabodetabek'); } catch(e){}
                 }
             } catch(err) {
                 console.error("Gagal simpan URL:", err);
-                closeConfigModal();
             }
+            
+            closeConfigModal();
+            try { alertCustom("✅ URL Web App Jabodetabek Berhasil Disimpan!"); } catch(e){}
+            setTimeout(function() {
+                try { fetchSheetData(); } catch(e){}
+            }, 50);
+            return false;
         }
+        window.saveConfigUrl = saveConfigUrl;
 
         function copyGasCode() {
             const textarea = document.getElementById('gasCodeSnippet');

@@ -1713,22 +1713,23 @@ document.getElementById('statProses').innerText = assets.filter(a => a.status ==
                 const url = urlInput ? urlInput.value.trim() : '';
                 if (url) {
                     gasWebAppUrl = url;
-                    localStorage.setItem('gas_url_area1', url);
-                    closeConfigModal();
-                    alertCustom("✅ URL Web App Area 1 Berhasil Disimpan!");
-                    setTimeout(() => { fetchSheetData(); }, 50);
+                    try { localStorage.setItem('gas_url_area1', url); } catch(e){}
                 } else {
-                    localStorage.removeItem('gas_url_area1');
                     gasWebAppUrl = DEFAULT_GAS_URL;
-                    closeConfigModal();
-                    alertCustom("Konfigurasi diubah ke URL bawaan.");
-                    setTimeout(() => { fetchSheetData(); }, 50);
+                    try { localStorage.removeItem('gas_url_area1'); } catch(e){}
                 }
             } catch(err) {
                 console.error("Gagal simpan URL:", err);
-                closeConfigModal();
             }
+            
+            closeConfigModal();
+            try { alertCustom("✅ URL Web App Area 1 Berhasil Disimpan!"); } catch(e){}
+            setTimeout(function() {
+                try { fetchSheetData(); } catch(e){}
+            }, 50);
+            return false;
         }
+        window.saveConfigUrl = saveConfigUrl;
 
         function copyGasCode() {
             const textarea = document.getElementById('gasCodeSnippet');
