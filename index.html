@@ -71,10 +71,10 @@
                 <button id="btnInstallPwa" onclick="promptInstallPwa()" class="hidden px-3.5 py-2 text-xs font-bold rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 transition flex items-center gap-1.5 shadow-md animate-bounce">
                     <i class="fa-solid fa-download"></i> Install App
                 </button>
-                <button id="btnHistoryHeader" onclick="openSjHistoryModal()" class="px-3 py-2 text-xs font-semibold rounded-xl bg-indigo-800/60 hover:bg-indigo-700 text-indigo-100 transition flex items-center gap-1.5 border border-indigo-600/40 shadow-sm">
+                <button id="btnHistoryHeader" onclick="if(document.getElementById('sjHistoryModal')) document.getElementById('sjHistoryModal').style.display='flex'; openSjHistoryModal(); return false;" class="px-3 py-2 text-xs font-semibold rounded-xl bg-indigo-800/60 hover:bg-indigo-700 text-indigo-100 transition flex items-center gap-1.5 border border-indigo-600/40 shadow-sm cursor-pointer">
                     <i class="fa-solid fa-clock-rotate-left"></i> Riwayat SJ
                 </button>
-                <button id="btnConfigHeader" onclick="openConfigModal()" class="btn-config-spreadsheet px-3.5 py-2 text-xs font-semibold rounded-xl bg-indigo-800/60 hover:bg-indigo-700 text-indigo-100 transition flex items-center gap-1.5 border border-indigo-600/40 shadow-sm">
+                <button id="btnConfigHeader" onclick="if(document.getElementById('configModal')) document.getElementById('configModal').style.display='flex'; openConfigModal(); return false;" class="btn-config-spreadsheet px-3.5 py-2 text-xs font-semibold rounded-xl bg-indigo-800/60 hover:bg-indigo-700 text-indigo-100 transition flex items-center gap-1.5 border border-indigo-600/40 shadow-sm cursor-pointer">
                     <i class="fa-solid fa-sliders"></i> Konfigurasi Sheets
                 </button>
                 <button onclick="switchTab('data')" id="btn-tab-data" class="px-4 py-2 text-xs font-bold rounded-xl bg-white text-indigo-950 transition shadow-md flex items-center gap-2">
@@ -91,15 +91,15 @@
     <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
 
         <!-- Connection Status Banner -->
-        <div id="connectionBanner" class="p-4 rounded-2xl bg-amber-50 border border-amber-200/80 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div id="connectionBanner" class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200/80 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div class="flex items-center gap-3">
-                <div class="w-3 h-3 rounded-full bg-amber-500 animate-pulse shrink-0"></div>
+                <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
                 <div>
-                    <h4 class="text-xs sm:text-sm font-bold text-amber-950">Mode Standalone / Local Cache Ready</h4>
-                    <p class="text-xs text-amber-800">Terhubung ke Spreadsheet ID <code class="font-mono font-bold bg-amber-100/80 px-1.5 py-0.5 rounded text-amber-900">1xma83YRtP0WbjDnUFjmhgie3mWDgejV95HhlZX0sEvk</code> via Web App API.</p>
+                    <h4 class="text-xs sm:text-sm font-bold text-emerald-950">Mode Standalone / Local Cache Ready (Area 1 - Kalbar)</h4>
+                    <p class="text-xs text-emerald-800">Terhubung ke Spreadsheet ID <code class="font-mono font-bold bg-emerald-100/80 px-1.5 py-0.5 rounded text-emerald-900">1xma83YRtP0WbjDnUFjmhgie3mWDgejV95HhlZX0sEvk</code> via Web App API.</p>
                 </div>
             </div>
-            <button id="btnConfigBanner" onclick="openConfigModal()" class="btn-config-spreadsheet px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl transition shadow-sm shrink-0">
+            <button id="btnConfigBanner" onclick="if(document.getElementById('configModal')) document.getElementById('configModal').style.display='flex'; openConfigModal(); return false;" class="btn-config-spreadsheet px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition shadow-sm shrink-0 cursor-pointer">
                 Hubungkan Apps Script
             </button>
         </div>
