@@ -872,6 +872,100 @@ function doPost(e) {
 
     <!-- Application Script Logic -->
     <script>
+        function generateUniqueCode(length = 4) {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function parseAssetItem(item) {
+            if (!item || typeof item !== 'object') return item;
+            
+            let code = String(item.code || '').trim();
+            let name = String(item.name || '').trim();
+            let outlet = String(item.outlet || '').trim();
+            let reqDate = String(item.reqDate || item.tglPermintaan || '').trim();
+            let qty = item.qty;
+            let rawStatus = String(item.status || item.barangSiapAntar || '').trim();
+
+            const knownOutletKeywords = [
+                'Bebek Boedjang', 'Bakso Tyga Sapi', 'Sop Mak Garang', 'Mie Ayam Muntjul',
+                'Ayam Goreng Makmur', 'Ikan Bakar Muara', 'Kokotuku', 'Perlengkapan', 'Peralatan',
+                'Singkawang', 'Serdam', 'Merdeka', 'Perdana', 'Patimura', 'Johar', 'Ayani',
+                'Siantan', 'M Sohor', 'Danse', 'SSA', 'Utama'
+            ];
+
+            let detectedOutlet = '';
+            [outlet, name, reqDate].forEach(val => {
+                if (!detectedOutlet && val) {
+                    for (let kw of knownOutletKeywords) {
+                        if (val.toLowerCase().includes(kw.toLowerCase())) {
+                            detectedOutlet = val;
+                            break;
+                        }
+                    }
+                }
+            });
+
+            let detectedName = '';
+            [name, qty, outlet].forEach(val => {
+                if (!detectedName && val && typeof val === 'string') {
+                    let str = val.trim();
+                    let isNum = !isNaN(Number(str));
+                    let isDate = str.match(/^\d{2}[-\/]\d{2}[-\/]\d{4}/) || str.match(/^\d{4}[-\/]\d{2}[-\/]\d{2}/) || str.includes('GMT') || str.includes('T17:');
+                    let isOutletKw = knownOutletKeywords.some(kw => str.toLowerCase().includes(kw.toLowerCase()));
+                    
+                    if (!isNum && !isDate && !isOutletKw && str.length > 1) {
+                        detectedName = str;
+                    }
+                }
+            });
+
+            let detectedQty = 1;
+            [qty, name, outlet].forEach(val => {
+                if (val !== undefined && val !== null) {
+                    let num = Number(val);
+                    if (!isNaN(num) && num > 0 && num < 10000) {
+                        detectedQty = num;
+                    }
+                }
+            });
+
+            let detectedReqDate = '-';
+            [reqDate, outlet, item.tglInput, item.tanggalInput].forEach(val => {
+                if (detectedReqDate === '-' && val) {
+                    let str = String(val).trim();
+                    if (str.match(/^\d{2}[-\/]\d{2}[-\/]\d{4}/) || str.match(/^\d{4}[-\/]\d{2}[-\/]\d{2}/)) {
+                        detectedReqDate = str.split(' ')[0];
+                    }
+                }
+            });
+            if (detectedReqDate === '-') detectedReqDate = reqDate || item.tglInput || '15-06-2026';
+
+            let normStatus = 'Proses Gudang';
+            if (item.isSelesai === true || rawStatus.toLowerCase().includes('done') || rawStatus.toLowerCase().includes('selesai')) {
+                normStatus = 'DONE';
+            } else if (rawStatus.toLowerCase().includes('ready') || rawStatus.toLowerCase().includes('antar') || rawStatus.toLowerCase().includes('siap') || rawStatus === 'ya' || rawStatus === 'true') {
+                normStatus = 'Ready Antar';
+            } else {
+                normStatus = item.status || 'Proses Gudang';
+            }
+
+            return {
+                rowIdx: item.rowIdx || null,
+                code: code || generateUniqueCode(5),
+                reqDate: detectedReqDate,
+                name: detectedName || name || 'Aset Outlet',
+                outlet: detectedOutlet || outlet || 'Outlet Utama',
+                qty: detectedQty,
+                status: normStatus,
+                priority: item.priority || 'Normal'
+            };
+        }
+
         // Initial Database Mock Data
         const defaultAssets = [
             { rowIdx: 2, code: '70661', reqDate: '15-06-2026', name: 'Meja - 4 Orang - Jati - Jepara - 120X70X75CM', outlet: 'Bebek Boedjang Singkawang', qty: 8, priority: 'Normal', status: 'Ready Antar' },
@@ -896,9 +990,14 @@ function doPost(e) {
             localStorage.setItem('makanbang_cache_ver_jabo', CURRENT_CACHE_VERSION);
         }
 
-        // Load cached assets if present
+        // Load cached assets safely
         let rawCachedAssets = JSON.parse(localStorage.getItem('makanbang_assets_cache_jabo')) || defaultAssets;
-        let assets = rawCachedAssets.map(parseAssetItem);
+        let assets = [];
+        try {
+            assets = (Array.isArray(rawCachedAssets) ? rawCachedAssets : defaultAssets).map(item => parseAssetItem(item)).filter(Boolean);
+        } catch(e) {
+            assets = defaultAssets;
+        }
         let selectedRowIds = new Set();
 
         function saveLocalState() {
