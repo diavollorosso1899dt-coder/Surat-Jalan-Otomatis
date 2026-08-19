@@ -1542,21 +1542,30 @@ document.getElementById('statProses').innerText = assets.filter(a => a.status ==
         }
 
         function openConfigModal() {
-            const modal = document.getElementById('configModal');
-            if (modal) {
-                modal.classList.remove('hidden');
-                modal.style.display = 'flex';
+            try {
+                const modal = document.getElementById('configModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.style.setProperty('display', 'flex', 'important');
+                    modal.style.setProperty('visibility', 'visible', 'important');
+                    modal.style.setProperty('opacity', '1', 'important');
+                    modal.style.setProperty('z-index', '999999', 'important');
+                }
+                const input = document.getElementById('gasUrlInput');
+                if (input) input.value = gasWebAppUrl || '';
+            } catch(err) {
+                console.error("Gagal membuka modal:", err);
             }
-            const input = document.getElementById('gasUrlInput');
-            if (input) input.value = gasWebAppUrl || '';
         }
 
         function closeConfigModal() {
-            const modal = document.getElementById('configModal');
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.style.display = 'none';
-            }
+            try {
+                const modal = document.getElementById('configModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.style.setProperty('display', 'none', 'important');
+                }
+            } catch(err) {}
         }
 
         function saveConfigUrl() {
