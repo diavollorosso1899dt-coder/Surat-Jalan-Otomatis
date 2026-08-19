@@ -1577,14 +1577,20 @@ document.getElementById('statProses').innerText = assets.filter(a => a.status ==
 
         function openConfigModal() {
             const modal = document.getElementById('configModal');
-            if (modal) modal.classList.remove('hidden');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
+            }
             const input = document.getElementById('gasUrlInput');
-            if (input) input.value = gasWebAppUrl;
+            if (input) input.value = gasWebAppUrl || '';
         }
 
         function closeConfigModal() {
             const modal = document.getElementById('configModal');
-            if (modal) modal.classList.add('hidden');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            }
         }
 
         function saveConfigUrl() {
