@@ -882,33 +882,26 @@ function doPost(e) {
         ];
 
         // Centralized Apps Script URL (Area 2 - Jabodetabek)
-        let gasWebAppUrl = localStorage.getItem('gas_web_app_url_jabodetabek') || '';
-
-        function switchActiveArea(areaKey) {
-            currentArea = areaKey;
-            localStorage.setItem('makanbang_active_area', areaKey);
-            gasWebAppUrl = currentArea === 'area2' ? (gasUrlArea2 || gasUrlArea1) : gasUrlArea1;
-            const areaName = areaKey === 'area2' ? 'Area 2 (Regional 2)' : 'Area 1 (Kalbar)';
-            alertCustom(`📍 Beralih ke Data ${areaName}`);
-            playAudioFx('success');
-            if (gasWebAppUrl) {
-                fetchSheetData();
-            }
+        const DEFAULT_GAS_URL_JABO = 'https://script.google.com/macros/s/AKfycbwEp2no-rHnAluDMpt3Mswt8XocdiTQCV3b4_G8GIA-foWPlyOZ4HuIHRohc_pl-kI/exec';
+        let gasWebAppUrl = localStorage.getItem('gas_web_app_url_jabodetabek') || DEFAULT_GAS_URL_JABO;
+        if (!gasWebAppUrl || gasWebAppUrl.trim() === '') {
+            gasWebAppUrl = DEFAULT_GAS_URL_JABO;
         }
 
         // Automatic Mobile Cache Invalidation Version
-        const CURRENT_CACHE_VERSION = 'v2.3_new_url';
-        if (localStorage.getItem('makanbang_cache_ver') !== CURRENT_CACHE_VERSION) {
-            localStorage.removeItem('makanbang_assets_cache');
-            localStorage.setItem('makanbang_cache_ver', CURRENT_CACHE_VERSION);
+        const CURRENT_CACHE_VERSION = 'v4.0_jabo_bulletproof';
+        if (localStorage.getItem('makanbang_cache_ver_jabo') !== CURRENT_CACHE_VERSION) {
+            localStorage.removeItem('makanbang_assets_cache_jabo');
+            localStorage.setItem('makanbang_cache_ver_jabo', CURRENT_CACHE_VERSION);
         }
 
         // Load cached assets if present
-        let assets = JSON.parse(localStorage.getItem('makanbang_assets_cache')) || defaultAssets;
+        let rawCachedAssets = JSON.parse(localStorage.getItem('makanbang_assets_cache_jabo')) || defaultAssets;
+        let assets = rawCachedAssets.map(parseAssetItem);
         let selectedRowIds = new Set();
 
         function saveLocalState() {
-            localStorage.setItem('makanbang_assets_cache', JSON.stringify(assets));
+            localStorage.setItem('makanbang_assets_cache_jabo', JSON.stringify(assets));
         }
 
         function generateUniqueCode(length = 4) {
@@ -1212,8 +1205,8 @@ function doPost(e) {
                 const response = await fetch(fetchUrl);
                 const data = await response.json();
                 if (Array.isArray(data)) {
-                    // Filter out trailing blank spreadsheet rows (where name and code are empty)
-                    assets = data.map(parseAssetItem).filter(a => a && a.name && String(a.name).trim() !== '' && String(a.name).trim() !== '-');
+                    // Filter baris kosong murni (mempertahankan semua data yang punya Kode RO atau Nama Barang)
+                    assets = data.map(parseAssetItem).filter(a => a && ((a.name && String(a.name).trim() !== '' && String(a.name).trim() !== '-') || (a.code && String(a.code).trim() !== '' && String(a.code).trim() !== '-')));
                     saveLocalState();
                     renderTable();
                     updateStats();
